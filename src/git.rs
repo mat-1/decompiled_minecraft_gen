@@ -38,8 +38,12 @@ pub fn checkout_branch(name: &str) {
     Command::new("git")
         .args(["checkout", "--orphan", name])
         .current_dir(repo_path())
-        // .stdout(io::stdout())
-        // .stderr(io::stderr())
+        .output()
+        .unwrap();
+    // --orphan fails if the branch already exists, so run checkout again without --orphan
+    Command::new("git")
+        .args(["checkout", name])
+        .current_dir(repo_path())
         .output()
         .unwrap();
 }

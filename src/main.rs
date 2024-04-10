@@ -6,7 +6,7 @@ pub mod download;
 pub mod git;
 mod sources;
 
-const REDOWNLOAD_MANIFEST: bool = cfg!(debug_assertions);
+const REDOWNLOAD_MANIFEST: bool = !cfg!(debug_assertions);
 
 fn main() {
     let config = Config::load();
