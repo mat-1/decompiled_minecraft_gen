@@ -7,4 +7,5 @@ edition = "2021"
 chrono = { version = "0.4.37", features = ["serde"] }
 serde = { version = "1.0.197", features = ["derive"] }
 serde_json = "1.0.115"
+toml = { version = "0.8.12", default-features = false, features = ["parse"] }
 ureq = "2.9.6"

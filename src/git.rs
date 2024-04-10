@@ -26,6 +26,14 @@ pub fn ensure_repo_created() {
         .unwrap();
 }
 
+pub fn push() {
+    Command::new("git")
+        .args(["push", "--all"])
+        .current_dir(repo_path())
+        .output()
+        .unwrap();
+}
+
 pub fn checkout_branch(name: &str) {
     Command::new("git")
         .args(["checkout", "--orphan", name])

@@ -1,11 +1,13 @@
 use std::{fs, io, path::Path, process::Command};
 
+use crate::config::Config;
+
 const VINEFLOWER_PATH: &str = "./lib/vineflower-1.10.0.jar";
 // if you're updating it, download from https://repo1.maven.org/maven2/net/md-5/SpecialSource/
 // make sure to use the -shaded jar! otherwise it won't work
 const SPECIALSOURCE_PATH: &str = "./lib/SpecialSource-1.11.4-shaded.jar";
 
-pub fn decompile_jar(jar_path: &Path, out_path: &Path) {
+pub fn decompile_jar(config: &Config, jar_path: &Path, out_path: &Path) {
     // make sure we don't delete /
     assert!(
         out_path.parent().is_some(),
@@ -51,9 +53,8 @@ pub fn decompile_jar(jar_path: &Path, out_path: &Path) {
 
     println!("Decompiling {jar_path:?}");
     Command::new("java")
+        .args(config.java_args.iter().map(String::as_str))
         .args([
-            "-Xmx4G",
-            "-Xms1G",
             "-jar",
             VINEFLOWER_PATH,
             jar_path.to_str().unwrap(),
@@ -67,15 +68,15 @@ pub fn decompile_jar(jar_path: &Path, out_path: &Path) {
 }
 
 pub fn remap_jar_with_srg_mappings(
+    config: &Config,
     jar_input_path: &Path,
     jar_output_path: &Path,
     mappings_path: &Path,
 ) {
     println!("Remapping {jar_input_path:?} with mappings {mappings_path:?}");
     Command::new("java")
+        .args(config.java_args.iter().map(String::as_str))
         .args([
-            "-Xmx4G",
-            "-Xms1G",
             "-jar",
             SPECIALSOURCE_PATH,
             "--in-jar",
@@ -88,5 +89,5 @@ pub fn remap_jar_with_srg_mappings(
         // .stdout(io::stdout())
         // .stderr(io::stderr())
         .output()
-        .expect("failed to execute vineflower");
+        .expect("failed to execute specialsource");
 }

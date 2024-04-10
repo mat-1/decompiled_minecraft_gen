@@ -1,11 +1,11 @@
 use std::{collections::HashSet, path::PathBuf};
 
-use crate::{decomp, download, git};
+use crate::{config::Config, decomp, download, git};
 
 const FIRST_VERSION_WITH_AUTHLIB: &str = "13w39a";
 const BRANCH_NAME: &str = "authlib";
 
-pub fn generate() {
+pub fn generate(config: &Config) {
     git::checkout_branch(BRANCH_NAME);
 
     let manifest = download::mojang::get_version_manifest();
@@ -71,7 +71,7 @@ pub fn generate() {
 
         let out_path = PathBuf::from("./tmp/out");
 
-        decomp::decompile_jar(&jar_path, &out_path);
+        decomp::decompile_jar(config, &jar_path, &out_path);
 
         git::move_decomp_output_into_repo(&out_path, &[]);
 

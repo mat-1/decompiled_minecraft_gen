@@ -1,11 +1,11 @@
 use std::path::PathBuf;
 
-use crate::{decomp, download, git};
+use crate::{config::Config, decomp, download, git};
 
 const FIRST_VERSION_WITH_MAPPINGS: &str = "19w36a";
 const BRANCH_NAME: &str = "mojmap";
 
-pub fn generate() {
+pub fn generate(config: &Config) {
     git::checkout_branch(BRANCH_NAME);
 
     let manifest = download::mojang::get_version_manifest();
@@ -56,8 +56,8 @@ pub fn generate() {
 
         let out_path = PathBuf::from("./tmp/out");
 
-        decomp::remap_jar_with_srg_mappings(&jar_path, &remapped_jar_path, &mappings_path);
-        decomp::decompile_jar(&remapped_jar_path, &out_path);
+        decomp::remap_jar_with_srg_mappings(config, &jar_path, &remapped_jar_path, &mappings_path);
+        decomp::decompile_jar(config, &remapped_jar_path, &out_path);
 
         git::move_decomp_output_into_repo(&out_path, &["assets", "data"]);
 

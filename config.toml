@@ -1,0 +1,1 @@
+java_args = ["-Xmx4G", "-Xms1G"]
