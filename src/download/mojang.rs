@@ -125,14 +125,10 @@ pub fn get_version_jar(id: &str) -> PathBuf {
     jar_path
 }
 
-pub fn get_version_mappings(id: &str) -> PathBuf {
+pub fn get_version_mappings(id: &str) -> Option<PathBuf> {
     let version_data = get_version_data(id);
-    let jar_url = &version_data
-        .downloads
-        .get("client_mappings")
-        .expect("version has no mojang mappings")
-        .url;
+    let jar_url = &version_data.downloads.get("client_mappings")?.url;
     let jar_path = PathBuf::from(format!("tmp/mojang/{id}-mappings.txt"));
     get_file_from_url_or_cache(jar_url, &jar_path);
-    jar_path
+    Some(jar_path)
 }

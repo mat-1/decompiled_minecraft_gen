@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use crate::{config::Config, decomp, download, git};
 
-const FIRST_VERSION_WITH_MAPPINGS: &str = "19w36a";
+const FIRST_VERSION_WITH_MAPPINGS: &str = "1.14.4";
 const BRANCH_NAME: &str = "mojmap";
 
 pub fn generate(config: &Config) {
@@ -52,7 +52,10 @@ pub fn generate(config: &Config) {
                 .to_str()
                 .unwrap()
         ));
-        let mappings_path = download::mojang::get_version_mappings(&version_id);
+        let Some(mappings_path) = download::mojang::get_version_mappings(&version_id) else {
+            println!("{version_id} has no mappings");
+            continue;
+        };
 
         let out_path = PathBuf::from("./tmp/out");
 
