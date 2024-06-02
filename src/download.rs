@@ -6,7 +6,7 @@ pub mod mojang;
 pub struct DownloadResult {}
 
 pub fn download_file_from_url_to_path(url: &str, path: &Path) -> Vec<u8> {
-    println!("downloading {url}");
+    println!("downloading {url} to {path:?}");
     let res = ureq::get(url)
         .call()
         .unwrap_or_else(|_| panic!("failed to download {url}"));

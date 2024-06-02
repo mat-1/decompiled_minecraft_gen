@@ -60,6 +60,7 @@ pub fn decompile_jar(config: &Config, jar_path: &Path, out_path: &Path) {
             jar_path.to_str().unwrap(),
             out_path.to_str().unwrap(),
         ])
+        .args(config.vineflower_args.iter().map(String::as_str))
         .stdout(io::stdout())
         .stderr(io::stderr())
         .output()

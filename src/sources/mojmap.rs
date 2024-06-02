@@ -39,6 +39,8 @@ pub fn generate(config: &Config) {
             .collect::<Vec<_>>()
     };
 
+    println!("versions_to_decompile: {versions_to_decompile:?}");
+
     for version in versions_to_decompile {
         let version_id = version.id.to_owned();
         println!("Decompiling version {version_id}");

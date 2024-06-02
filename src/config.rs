@@ -3,6 +3,8 @@ use serde::Deserialize;
 #[derive(Deserialize)]
 pub struct Config {
     pub java_args: Vec<String>,
+    #[serde(default)]
+    pub vineflower_args: Vec<String>,
 }
 
 impl Config {
