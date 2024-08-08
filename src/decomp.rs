@@ -2,7 +2,7 @@ use std::{fs, io, path::Path, process::Command};
 
 use crate::config::Config;
 
-const VINEFLOWER_PATH: &str = "./lib/vineflower-1.10.0.jar";
+const VINEFLOWER_PATH: &str = "./lib/vineflower-1.10.1+patched.jar";
 // if you're updating it, download from https://repo1.maven.org/maven2/net/md-5/SpecialSource/
 // make sure to use the -shaded jar! otherwise it won't work
 const SPECIALSOURCE_PATH: &str = "./lib/SpecialSource-1.11.4-shaded.jar";
@@ -54,13 +54,11 @@ pub fn decompile_jar(config: &Config, jar_path: &Path, out_path: &Path) {
     println!("Decompiling {jar_path:?}");
     Command::new("java")
         .args(config.java_args.iter().map(String::as_str))
-        .args([
-            "-jar",
-            VINEFLOWER_PATH,
-            jar_path.to_str().unwrap(),
-            out_path.to_str().unwrap(),
-        ])
+        .arg("-jar")
+        .arg(VINEFLOWER_PATH)
         .args(config.vineflower_args.iter().map(String::as_str))
+        .arg(jar_path.to_str().unwrap())
+        .arg(out_path.to_str().unwrap())
         .stdout(io::stdout())
         .stderr(io::stderr())
         .output()
