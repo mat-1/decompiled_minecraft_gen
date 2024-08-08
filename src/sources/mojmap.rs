@@ -64,7 +64,7 @@ pub fn generate(config: &Config) {
         decomp::remap_jar_with_srg_mappings(config, &jar_path, &remapped_jar_path, &mappings_path);
         decomp::decompile_jar(config, &remapped_jar_path, &out_path);
 
-        git::move_decomp_output_into_repo(&out_path, &["assets", "data"]);
+        git::move_decomp_output_into_repo(&out_path, &["assets", "data", "META-INF"]);
 
         git::commit(
             &format!("Update to {version_id}"),

@@ -25,13 +25,11 @@ pub fn decompile_jar(config: &Config, jar_path: &Path, out_path: &Path) {
         .expect("out path must be readable")
         .collect::<Result<Vec<_>, _>>()
         .unwrap();
-    // if it's not empty then make sure there's a META-INF here JUST to be safe
+    // if it's not empty then make sure there's a `net` dir here JUST to be safe
     if !entries_in_out_path.is_empty()
-        && !entries_in_out_path
-            .iter()
-            .any(|e| e.file_name() == "META-INF")
+        && !entries_in_out_path.iter().any(|e| e.file_name() == "net")
     {
-        panic!("tried to decompile into a non-empty directory that doesn't look like a previous decompilation output (no META-INF). delete it yourself if you're sure it's fine.")
+        panic!("tried to decompile into a non-empty directory that doesn't look like a previous decompilation output (no 'net' directory). delete it yourself if you're sure it's fine.")
     }
 
     println!("deleting everything in {out_path:?}");
