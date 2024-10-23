@@ -6,7 +6,8 @@ use std::{
 
 use chrono::{DateTime, Utc};
 
-pub const REPO_PATH: &str = "repo";
+use crate::REPO_PATH;
+
 pub const DEFAULT_BRANCH_NAME: &str = "mojmap";
 
 fn repo_path() -> PathBuf {

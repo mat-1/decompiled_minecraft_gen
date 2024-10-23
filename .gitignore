@@ -2,3 +2,5 @@
 /tmp
 /repo
 /deploy.sh
+
+/lockfile
