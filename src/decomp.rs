@@ -8,60 +8,92 @@ const VINEFLOWER_PATH: &str = "./lib/vineflower-1.10.1+patched.jar";
 const SPECIALSOURCE_PATH: &str = "./lib/SpecialSource-1.11.4-shaded.jar";
 
 pub fn decompile_jar(config: &Config, jar_path: &Path, out_path: &Path) {
-    // make sure we don't delete /
-    assert!(
-        out_path.parent().is_some(),
-        "decompile out path ({out_path:?}) can't be the root"
-    );
+    for attempt_number in 0..3 {
+        // make sure we don't delete /
+        assert!(
+            out_path.parent().is_some(),
+            "decompile out path ({out_path:?}) can't be the root"
+        );
 
-    if !out_path
-        .try_exists()
-        .expect("out path directory ({out_path:?}) must be readable")
-    {
-        fs::create_dir_all(out_path).expect("couldn't create out");
-    }
-    let entries_in_out_path = out_path
-        .read_dir()
-        .expect("out path must be readable")
-        .collect::<Result<Vec<_>, _>>()
-        .unwrap();
-    // if it's not empty then make sure there's a `net` dir here JUST to be safe
-    if !entries_in_out_path.is_empty()
-        && !entries_in_out_path.iter().any(|e| e.file_name() == "net")
-    {
-        panic!("tried to decompile into a non-empty directory that doesn't look like a previous decompilation output (no 'net' directory). delete it yourself if you're sure it's fine.")
-    }
+        if !out_path
+            .try_exists()
+            .expect("out path directory ({out_path:?}) must be readable")
+        {
+            fs::create_dir_all(out_path).expect("couldn't create out");
+        }
+        let entries_in_out_path = out_path
+            .read_dir()
+            .expect("out path must be readable")
+            .collect::<Result<Vec<_>, _>>()
+            .unwrap();
+        // if it's not empty then make sure there's a `net` dir here JUST to be safe
+        if !entries_in_out_path.is_empty()
+            && !entries_in_out_path.iter().any(|e| e.file_name() == "net")
+        {
+            panic!("tried to decompile into a non-empty directory that doesn't look like a previous decompilation output (no 'net' directory). delete it yourself if you're sure it's fine.")
+        }
 
-    println!("deleting everything in {out_path:?}");
-    for entry in entries_in_out_path {
-        if entry.path().is_dir() {
-            if let Err(e) = fs::remove_dir_all(entry.path()) {
-                println!("couldn't remove directory {entry:?}! {e}");
+        println!("deleting everything in {out_path:?}");
+        for entry in entries_in_out_path {
+            if entry.path().is_dir() {
+                if let Err(e) = fs::remove_dir_all(entry.path()) {
+                    println!("couldn't remove directory {entry:?}! {e}");
+                }
+            } else if let Err(e) = fs::remove_file(entry.path()) {
+                println!("couldn't remove file {entry:?}! {e}");
             }
-        } else if let Err(e) = fs::remove_file(entry.path()) {
-            println!("couldn't remove file {entry:?}! {e}");
+        }
+
+        // make sure it's empty
+        assert!(
+            out_path.read_dir().unwrap().next().is_none(),
+            "out_path ({out_path:?}) should be empty"
+        );
+
+        println!("Decompiling {jar_path:?}");
+        Command::new("java")
+            .args(config.java_args.iter().map(String::as_str))
+            .arg("-jar")
+            .arg(VINEFLOWER_PATH)
+            .args(config.vineflower_args.iter().map(String::as_str))
+            .arg(jar_path.to_str().unwrap())
+            .arg(out_path.to_str().unwrap())
+            .stdout(io::stdout())
+            .stderr(io::stderr())
+            .output()
+            .expect("failed to execute vineflower");
+        println!("Finished decompiling");
+
+        if check_decompiled_successfully(out_path) {
+            println!(
+                "Decompiled successfully after {} attempt{}",
+                attempt_number + 1,
+                if attempt_number == 0 { "" } else { "s" }
+            );
+            return;
+        } else {
+            println!("Decompilation failed, retrying :(");
         }
     }
 
-    // make sure it's empty
-    assert!(
-        out_path.read_dir().unwrap().next().is_none(),
-        "out_path ({out_path:?}) should be empty"
-    );
+    panic!("Decompilation failed!");
+}
 
-    println!("Decompiling {jar_path:?}");
-    Command::new("java")
-        .args(config.java_args.iter().map(String::as_str))
-        .arg("-jar")
-        .arg(VINEFLOWER_PATH)
-        .args(config.vineflower_args.iter().map(String::as_str))
-        .arg(jar_path.to_str().unwrap())
-        .arg(out_path.to_str().unwrap())
-        .stdout(io::stdout())
-        .stderr(io::stderr())
-        .output()
-        .expect("failed to execute vineflower");
-    println!("Finished decompiling");
+fn check_decompiled_successfully(out_path: &Path) -> bool {
+    // recurse over the out_path and check if there's any java file
+
+    for entry in out_path.read_dir().expect("out path must be readable") {
+        let entry = entry.expect("entry must be readable");
+        if entry.path().is_dir() {
+            if check_decompiled_successfully(&entry.path()) {
+                return true;
+            }
+        } else if entry.path().extension().unwrap_or_default() == "java" {
+            return true;
+        }
+    }
+
+    false
 }
 
 pub fn remap_jar_with_srg_mappings(
