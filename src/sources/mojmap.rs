@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use crate::{config::Config, decomp, download, git};
 
 const FIRST_VERSION_WITH_MAPPINGS: &str = "1.14.4";
+const FIRST_VERSION_WITHOUT_OBF: &str = "26.1-snapshot-1";
 const BRANCH_NAME: &str = "mojmap";
 
 pub fn generate(config: &Config) {
@@ -18,25 +19,32 @@ pub fn generate(config: &Config) {
         }
     }
 
-    let versions_to_decompile = if let Some(latest_version_decompiled) = latest_version_decompiled {
+    let mut has_obfuscation = true;
+
+    let mut versions_to_decompile = Vec::new();
+    if let Some(latest_version_decompiled) = latest_version_decompiled {
         println!("Latest version decompiled: {latest_version_decompiled}");
 
-        manifest
-            .versions
-            .iter()
-            .rev()
-            .skip_while(|v| v.id != latest_version_decompiled)
-            .skip(1)
-            .collect::<Vec<_>>()
+        let mut it = manifest.versions.iter().rev();
+        for version in &mut it {
+            if version.id == FIRST_VERSION_WITHOUT_OBF {
+                has_obfuscation = false;
+            }
+            if version.id == latest_version_decompiled {
+                break;
+            }
+        }
+        versions_to_decompile.extend(it);
     } else {
         println!("No versions decompiled yet, starting at {FIRST_VERSION_WITH_MAPPINGS}");
 
-        manifest
-            .versions
-            .iter()
-            .rev()
-            .skip_while(|v| v.id != FIRST_VERSION_WITH_MAPPINGS)
-            .collect::<Vec<_>>()
+        versions_to_decompile.extend(
+            manifest
+                .versions
+                .iter()
+                .rev()
+                .skip_while(|v| v.id != FIRST_VERSION_WITH_MAPPINGS),
+        )
     };
 
     println!("versions_to_decompile: {versions_to_decompile:?}");
@@ -45,8 +53,12 @@ pub fn generate(config: &Config) {
         let version_id = version.id.to_owned();
         println!("Decompiling version {version_id}");
 
+        if version_id == FIRST_VERSION_WITHOUT_OBF {
+            has_obfuscation = false;
+        }
+
         let jar_path = download::mojang::get_version_jar(&version_id);
-        let remapped_jar_path = jar_path.with_file_name(format!(
+        let mut remapped_jar_path = jar_path.with_file_name(format!(
             "{}-remapped.jar",
             jar_path
                 .file_stem()
@@ -54,14 +66,24 @@ pub fn generate(config: &Config) {
                 .to_str()
                 .unwrap()
         ));
-        let Some(mappings_path) = download::mojang::get_version_mappings(&version_id) else {
-            println!("{version_id} has no mappings");
-            continue;
-        };
 
         let out_path = PathBuf::from("./tmp/out");
 
-        decomp::remap_jar_with_srg_mappings(config, &jar_path, &remapped_jar_path, &mappings_path);
+        if has_obfuscation {
+            let Some(mappings_path) = download::mojang::get_version_mappings(&version_id) else {
+                println!("{version_id} has no mappings");
+                continue;
+            };
+
+            decomp::remap_jar_with_srg_mappings(
+                config,
+                &jar_path,
+                &remapped_jar_path,
+                &mappings_path,
+            );
+        } else {
+            remapped_jar_path = jar_path;
+        }
         decomp::decompile_jar(config, &remapped_jar_path, &out_path);
 
         git::move_decomp_output_into_repo(&out_path, &["assets", "data", "META-INF"]);
